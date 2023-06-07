@@ -1,3 +1,5 @@
+// API OpenWeatherMap
+const CHAVE_API = "23152605cb2a145350eca4480117919a";
 // Relogio
 const horas = document.querySelector("#horas");
 const minutos = document.querySelector("#minutos");
@@ -7,92 +9,80 @@ const dia = document.querySelector("#dia");
 const mes = document.querySelector("#mes");
 const ano = document.querySelector("#ano");
 
-// posição
-
+const inputCidade = document.querySelector(".input-texto");
+const background = document.querySelector("body");
+const displayTemp = document.querySelector("#cidade-icone");
+// Latitude e Longitude
 var lat;
 var lon;
-// Entrada de texto
-const inputCidade = document.querySelector(".input-texto");
-// API OpenWeatherMap
-const chaveAPI = "23152605cb2a145350eca4480117919a";
 
-const background = document.querySelector("body");
-
-const iconCode = "";
-
-const displayTemp = document.querySelector("#cidade-icone");
+var city;
+var temp;
+var iconCode;
 
 function mostraClima(cidade) {
-  // Verifica se a cidade foi fornecida
   if (cidade) {
     // Requisição da API de clima pelo nome da cidade
     fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${chaveAPI}&units=metric`
+      `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${CHAVE_API}&units=metric`
     )
       .then((response) => response.json())
       .then((data) => {
-        let city = data.name;
-        let temperature = Math.round(data.main.temp);
-        let iconCode = data.weather[0].icon;
+        city = data.name;
+        temp = Math.round(data.main.temp);
+        iconCode = data.weather[0].icon;
 
-        document.getElementById("temperatura").textContent = `${temperature}°C`;
-        document.getElementById("cidade").textContent = `${city}`;
-        document.getElementById("icone");
-
-        icone.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-        displayTemp.style.display = "flex";
-
-        let codigoCortado = "";
-        if (iconCode.slice(-1) == "n" || iconCode.slice(-1) == "d") {
-          codigoCortado = iconCode.slice(0, -1);
-        }
-        var corFundo = mudarBackground(codigoCortado);
-        background.style.background = corFundo;
+        alteraElementos(city, temp, iconCode);
       })
       .catch((error) => {
         console.log(error);
       });
   } else if (navigator.geolocation) {
     // Obtém a localização geográfica se a cidade não foi fornecida
-    navigator.geolocation.getCurrentPosition(function (position) {
-      var lat = position.coords.latitude;
-      var lon = position.coords.longitude;
+    obterLocalizacao()
+      .then((position) => {
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
 
-      // Requisição da API de clima pelas coordenadas geográficas
-      fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${chaveAPI}&units=metric`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          let city = data.name;
-          let temperature = Math.round(data.main.temp);
-          let iconCode = data.weather[0].icon;
+        // Requisição da API de clima pelas coordenadas geográficas
+        fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${CHAVE_API}&units=metric`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            city = data.name;
+            temperature = Math.round(data.main.temp);
+            iconCode = data.weather[0].icon;
 
-          document.getElementById(
-            "temperatura"
-          ).textContent = `${temperature}°C`;
-          document.getElementById("cidade").textContent = `${city}`;
-          document.getElementById("icone");
-
-          icone.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
-          displayTemp.style.display = "flex";
-
-          let codigoCortado = "";
-          if (iconCode.slice(-1) == "n" || iconCode.slice(-1) == "d") {
-            codigoCortado = iconCode.slice(0, -1);
-          }
-          var corFundo = mudarBackground(codigoCortado);
-          background.style.background = corFundo;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    });
+            alteraElementos(city, temperature, iconCode);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 }
 
+function alteraElementos(nomeCidade, tempCidade, iconeClima) {
+  document.getElementById("temperatura").textContent = `${tempCidade}°C`;
+  document.getElementById("cidade").textContent = `${nomeCidade}`;
+
+  const icone = document.getElementById("icone");
+  icone.src = `https://openweathermap.org/img/wn/${iconeClima}@2x.png`;
+  displayTemp.style.display = "flex";
+
+  let codigoCortado = "";
+  if (iconeClima.slice(-1) == "n" || iconeClima.slice(-1) == "d") {
+    codigoCortado = iconeClima.slice(0, -1);
+  }
+  var corFundo = mudarBackground(codigoCortado);
+  background.style.background = corFundo;
+}
+
 function mudarBackground(codigoClima) {
-  // Testa as condições e retorna uma cor para cada uma, no caso a condição é o começo do codigo que indica o clima
   switch (codigoClima) {
     case "01":
       return "linear-gradient(180deg, #87ceeb, #00bfff)";
@@ -112,7 +102,18 @@ function mudarBackground(codigoClima) {
       return "linear-gradient(180deg, #f0ffff, #fffacd)";
     case "50":
       return "linear-gradient(180deg, #b0c4de, #d8bfd8)";
+    default:
+      return "";
   }
+}
+
+function obterLocalizacao() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position),
+      (error) => reject(error)
+    );
+  });
 }
 
 const relogio = setInterval(function time() {
@@ -127,13 +128,9 @@ const relogio = setInterval(function time() {
   let year = dateToday.getFullYear();
 
   if (hr < 10) hr = "0" + hr;
-
   if (min < 10) min = "0" + min;
-
   if (sec < 10) sec = "0" + sec;
-
   if (day < 10) day = "0" + day;
-
   if (month < 10) month = "0" + month;
 
   horas.textContent = hr;

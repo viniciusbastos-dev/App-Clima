@@ -8,7 +8,6 @@
 }
 
 body {
-  height: 100vh;
   background: linear-gradient(120deg, #4169e1, #4b0082);
   display: flex;
   align-items: center;
@@ -66,7 +65,7 @@ body {
 }
 
 .input-texto {
-  background: #000;
+  background: rgba(5, 5, 5, 0.9);
   font-size: 20px;
   padding: 5px 0;
   text-align: center;
